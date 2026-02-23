@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scan the Photo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: "Georgia", serif
+    }
+
+    #status {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      background: rgba(0, 0, 0, .8);
+      color: #e8d5a3;
+      padding: 12px 24px;
+      border: 1px solid rgba(201, 168, 76, .4);
+      font-size: .9rem;
+      font-style: italic;
+      text-align: center;
+      max-width: 90vw;
+    }
+
+    #video-popup {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #video-popup.show {
+      display: flex
+    }
+
+    #video-popup iframe {
+      width: 100vw;
+      height: 100vh;
+      border: none
+    }
+
+    #vcls {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 10000;
+      background: rgba(0, 0, 0, .8);
+      border: 1px solid #c9a84c;
+      color: #c9a84c;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: .9rem;
+    }
+  </style>
+  <!-- THREE must load before MindAR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-three.prod.js"></script>
+</head>
+
+<body>
+  <div id="status">Starting camera...</div>
+  <div id="video-popup">
+    <button id="vcls" onclick="closeVid()">&#x2715; Close</button>
+    <iframe id="yt" src="" allow="autoplay; fullscreen" allowfullscreen></iframe>
+  </div>
+  <script>
+    var vidOpen = false;
+    function showVid() {
+      if (vidOpen) return; vidOpen = true;
+      document.getElementById("yt").src = "https://www.youtube.com/embed/4-iGafIAVmo?autoplay=1&playsinline=1&rel=0";
+      document.getElementById("video-popup").classList.add("show");
+    }
+    function closeVid() {
+      vidOpen = false;
+      document.getElementById("yt").src = "";
+      document.getElementById("video-popup").classList.remove("show");
+    }
+    window.addEventListener("load", function () {
+      var st = document.getElementById("status");
+      var mind = new MINDAR.IMAGE.MindARThree({
+        container: document.body,
+        imageTargetSrc: "landing_page.mind",
+        uiLoading: "yes",
+        uiScanning: "yes"
+      });
+      var anchor = mind.addAnchor(0);
+      anchor.onTargetFound = function () { st.textContent = "Found! Opening..."; showVid(); };
+      anchor.onTargetLost = function () { st.textContent = "Point camera at the photo"; };
+      mind.start().then(function () {
+        mind.renderer.setAnimationLoop(function () { mind.renderer.render(mind.scene, mind.camera); });
+        st.textContent = "Point your camera at the photo";
+      }).catch(function (e) { st.textContent = "Error: " + e.message; console.error(e); });
+    });
+  </script>
+</body>
+
+</html>
