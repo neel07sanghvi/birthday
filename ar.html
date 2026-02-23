@@ -5,16 +5,89 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Your Surprise</title>
+
+  <script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
   <style>
-    * {
+    *,
+    *::before,
+    *::after {
       margin: 0;
       padding: 0;
       box-sizing: border-box
     }
 
     body {
-      background: #000;
+      background: #1a1208;
+      font-family: Georgia, serif;
       overflow: hidden
+    }
+
+    #startScreen {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      background: #1a1208;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      padding: 36px;
+      text-align: center;
+    }
+
+    #startScreen h1 {
+      color: #e8d5a3;
+      font-size: 1.5rem;
+      font-weight: normal;
+      letter-spacing: .05em;
+      line-height: 1.6;
+    }
+
+    #startScreen p {
+      color: rgba(232, 213, 163, .6);
+      font-size: .9rem;
+      line-height: 1.7;
+      max-width: 300px
+    }
+
+    #startBtn {
+      background: transparent;
+      border: 1px solid #c9a84c;
+      color: #c9a84c;
+      padding: 16px 40px;
+      font-size: 1rem;
+      font-family: Georgia, serif;
+      letter-spacing: .2em;
+      cursor: pointer;
+      transition: all .25s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #startBtn:active {
+      background: #c9a84c;
+      color: #1a1208
+    }
+
+    .gold-divider {
+      width: 100px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #c9a84c, transparent)
+    }
+
+    #browserNote {
+      font-size: .75rem;
+      color: rgba(232, 213, 163, .35);
+      max-width: 280px;
+      line-height: 1.6;
     }
 
     #hint {
@@ -23,16 +96,16 @@
       left: 50%;
       transform: translateX(-50%);
       z-index: 999;
-      background: rgba(0, 0, 0, .8);
+      background: rgba(0, 0, 0, .85);
       color: #e8d5a3;
-      padding: 12px 22px;
-      border: 1px solid rgba(201, 168, 76, .4);
-      font-size: 1rem;
+      padding: 12px 24px;
+      border: 1px solid rgba(201, 168, 76, .35);
+      font-size: .95rem;
       font-style: italic;
       text-align: center;
-      max-width: 90vw;
-      font-family: Georgia, serif;
-      white-space: nowrap;
+      max-width: 88vw;
+      display: none;
+      border-radius: 2px;
     }
 
     #video-popup {
@@ -63,16 +136,29 @@
       background: rgba(0, 0, 0, .85);
       border: 1px solid #c9a84c;
       color: #c9a84c;
-      padding: 10px 18px;
+      padding: 12px 18px;
       cursor: pointer;
       font-size: 1rem;
+      -webkit-tap-highlight-color: transparent;
     }
   </style>
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 </head>
 
 <body>
+
+  <!-- Step 1: tap to start -->
+  <div id="startScreen">
+    <div class="gold-divider"></div>
+    <h1>Ready for<br />your surprise?</h1>
+    <p>Tap the button below, then point your camera at the photo on the website</p>
+    <button id="startBtn" onclick="startAR()">TAP TO OPEN CAMERA</button>
+    <div id="browserNote">
+      On iPhone: use Safari for best results.<br />
+      On Android: Chrome or Samsung Browser work best.<br />
+      Allow camera permission when asked.
+    </div>
+    <div class="gold-divider"></div>
+  </div>
 
   <div id="hint">Point camera at the photo...</div>
 
@@ -81,45 +167,70 @@
     <iframe id="yt" src="" allow="autoplay; fullscreen" allowfullscreen></iframe>
   </div>
 
-  <a-scene
-    mindar-image="imageTargetSrc: https://neel07sanghvi.github.io/birthday/landing_page.mind; autoStart: true; uiLoading: yes; uiScanning: yes;"
-    color-space="sRGB" renderer="colorManagement: true" vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false">
+  <script type="module">
+    import * as THREE from "three";
+    import { MindARThree } from "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.module.js";
 
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-    <a-entity mindar-image-target="targetIndex: 0" id="target">
-      <a-plane color="#000" opacity="0" width="1" height="1.5"></a-plane>
-    </a-entity>
-
-  </a-scene>
-
-  <script>
+    var mindarInstance = null;
     var vidOpen = false;
 
     function showVid() {
       if (vidOpen) return;
       vidOpen = true;
       document.getElementById("hint").textContent = "Enjoy your surprise!";
-      // Use the short video ID directly in embed URL
-      document.getElementById("yt").src = "https://www.youtube.com/embed/4-iGafIAVmo?autoplay=1&playsinline=1&rel=0&mute=0";
+      document.getElementById("yt").src = document.getElementById("yt").src = "https://www.youtube.com/embed/4-iGafIAVmo?autoplay=1&playsinline=1&rel=0&loop=1&playlist=4-iGafIAVmo";
       document.getElementById("video-popup").classList.add("show");
     }
 
-    function closeVid() {
+    window.closeVid = function () {
       vidOpen = false;
       document.getElementById("yt").src = "";
       document.getElementById("video-popup").classList.remove("show");
       document.getElementById("hint").textContent = "Point camera at the photo...";
-    }
+    };
 
-    document.querySelector("a-scene").addEventListener("loaded", function () {
-      var target = document.getElementById("target");
-      target.addEventListener("targetFound", function () {
-        showVid();
-      });
-      // Don't close on lost — let her watch without having to hold still
-    });
+    window.startAR = async function () {
+      document.getElementById("startScreen").style.display = "none";
+      var hint = document.getElementById("hint");
+      hint.style.display = "block";
+      hint.textContent = "Starting camera...";
+
+      try {
+        mindarInstance = new MindARThree({
+          container: document.body,
+          imageTargetSrc: "https://neel07sanghvi.github.io/birthday/landing_page.mind",
+          uiLoading: "yes",
+          uiScanning: "yes",
+        });
+
+        var { renderer, scene, camera } = mindarInstance;
+        var anchor = mindarInstance.addAnchor(0);
+
+        anchor.onTargetFound = function () {
+          showVid();
+        };
+        // Don't close on lost so she can watch freely
+
+        await mindarInstance.start();
+        renderer.setAnimationLoop(function () {
+          renderer.render(scene, camera);
+        });
+        hint.textContent = "Point camera at the photo";
+
+      } catch (e) {
+        hint.textContent = "Camera error: " + e.message;
+        console.error(e);
+
+        // Fallback: if camera permission denied or not supported, show helpful message
+        if (e.name === "NotAllowedError" || e.message.includes("Permission")) {
+          hint.textContent = "Camera permission denied. Please allow camera access and reload.";
+        } else if (e.name === "NotFoundError") {
+          hint.textContent = "No camera found on this device.";
+        } else {
+          hint.textContent = "Could not start camera. Try Safari (iPhone) or Chrome (Android).";
+        }
+      }
+    };
   </script>
 
 </body>
