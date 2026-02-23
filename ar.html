@@ -151,7 +151,7 @@
     <div class="gold-divider"></div>
     <h1>Ready for<br />your surprise?</h1>
     <p>Tap the button below, then point your camera at the photo on the website</p>
-    <button id="startBtn" onclick="startAR()">TAP TO OPEN CAMERA</button>
+    <button id="startBtn">TAP TO OPEN CAMERA</button>
     <div id="browserNote">
       On iPhone: use Safari for best results.<br />
       On Android: Chrome or Samsung Browser work best.<br />
@@ -169,68 +169,76 @@
 
   <script type="module">
     import * as THREE from "three";
-    import { MindARThree } from "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.module.js";
+    import { MindARThree } from "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js";
 
-    var mindarInstance = null;
-    var vidOpen = false;
+
+    let mindarInstance = null;
+    let vidOpen = false;
 
     function showVid() {
       if (vidOpen) return;
       vidOpen = true;
+
       document.getElementById("hint").textContent = "Enjoy your surprise!";
-      document.getElementById("yt").src = document.getElementById("yt").src = "https://www.youtube.com/embed/4-iGafIAVmo?autoplay=1&playsinline=1&rel=0&loop=1&playlist=4-iGafIAVmo";
+      document.getElementById("yt").src = "https://www.youtube.com/embed/4-iGafIAVmo?autoplay=1&playsinline=1&rel=0";
       document.getElementById("video-popup").classList.add("show");
     }
 
-    window.closeVid = function () {
+    function closeVid() {
       vidOpen = false;
       document.getElementById("yt").src = "";
       document.getElementById("video-popup").classList.remove("show");
-      document.getElementById("hint").textContent = "Point camera at the photo...";
-    };
+      document.getElementById("hint").textContent =
+        "Point camera at the photo...";
+    }
 
-    window.startAR = async function () {
+    async function startAR() {
+      console.log("startAR called"); // ✅ Test log
+
       document.getElementById("startScreen").style.display = "none";
-      var hint = document.getElementById("hint");
+      const hint = document.getElementById("hint");
       hint.style.display = "block";
       hint.textContent = "Starting camera...";
 
       try {
         mindarInstance = new MindARThree({
           container: document.body,
-          imageTargetSrc: "https://neel07sanghvi.github.io/birthday/landing_page.mind",
+          imageTargetSrc:
+            "https://neel07sanghvi.github.io/birthday/landing_page.mind",
           uiLoading: "yes",
           uiScanning: "yes",
         });
 
-        var { renderer, scene, camera } = mindarInstance;
-        var anchor = mindarInstance.addAnchor(0);
+        const { renderer, scene, camera } = mindarInstance;
+        const anchor = mindarInstance.addAnchor(0);
 
-        anchor.onTargetFound = function () {
+        anchor.onTargetFound = () => {
           showVid();
         };
-        // Don't close on lost so she can watch freely
 
         await mindarInstance.start();
-        renderer.setAnimationLoop(function () {
+
+        renderer.setAnimationLoop(() => {
           renderer.render(scene, camera);
         });
-        hint.textContent = "Point camera at the photo";
 
+        hint.textContent = "Point camera at the photo";
       } catch (e) {
         hint.textContent = "Camera error: " + e.message;
         console.error(e);
-
-        // Fallback: if camera permission denied or not supported, show helpful message
-        if (e.name === "NotAllowedError" || e.message.includes("Permission")) {
-          hint.textContent = "Camera permission denied. Please allow camera access and reload.";
-        } else if (e.name === "NotFoundError") {
-          hint.textContent = "No camera found on this device.";
-        } else {
-          hint.textContent = "Could not start camera. Try Safari (iPhone) or Chrome (Android).";
-        }
       }
-    };
+    }
+
+    // ✅ Wait until DOM is ready before attaching listener
+    document.addEventListener("DOMContentLoaded", () => {
+      document
+        .getElementById("startBtn")
+        .addEventListener("click", startAR);
+
+      document
+        .getElementById("vcls")
+        .addEventListener("click", closeVid);
+    });
   </script>
 
 </body>
